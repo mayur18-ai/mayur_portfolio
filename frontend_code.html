@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#111827">
+  <title>AI Dukaandar</title>
+  <style>
+    :root {
+      --kimi-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --surface: #F9FAFB;
+      --border: #E5E7EB;
+      --positive: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --accent: #3B82F6;
+      --bg: #FFFFFF;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --text-primary: #F9FAFB;
+        --text-secondary: #9CA3AF;
+        --surface: #1F2937;
+        --border: #374151;
+        --bg: #111827;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--kimi-font-sans);
+      background: var(--bg);
+      color: var(--text-primary);
+      max-width: 720px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-title { font-size: 18px; font-weight: 500; }
+    .header-sub { font-size: 12px; color: var(--text-secondary); }
+    .ai-badge {
+      background: var(--positive);
+      color: white;
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .signals-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+    }
+    .signal-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .product-card {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 16px;
+      margin: 0 16px 12px;
+      cursor: pointer;
+      background: var(--bg);
+    }
+    .product-card.green { border-left: 4px solid var(--positive); }
+    .product-card.yellow { border-left: 4px solid var(--warning); }
+    .product-card.red { border-left: 4px solid var(--danger); }
+    .product-header { display: flex; justify-content: space-between; align-items: center; }
+    .product-name { font-size: 15px; font-weight: 500; }
+    .stock-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+    .stock-badge.good { background: #D1FAE5; color: #065F46; }
+    .stock-badge.low { background: #FEF3C7; color: #92400E; }
+    .stock-badge.critical { background: #FEE2E2; color: #991B1B; }
+    .recommendation {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 500;
+      margin-top: 8px;
+    }
+    .financial-impact {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+    .confidence-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .confidence-fill { height: 100%; border-radius: 3px; }
+    .product-details { margin-top: 10px; display: none; }
+    .product-details.expanded { display: block; }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: var(--text-secondary); }
+    .approve-btn {
+      width: calc(100% - 32px);
+      margin: 0 16px;
+      padding: 14px;
+      background: var(--positive);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .approve-btn:disabled { opacity: 0.5; }
+    .summary-panel {
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 16px;
+      margin: 16px;
+      border: 1px solid var(--border);
+    }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .summary-item { text-align: center; }
+    .summary-value { font-size: 20px; font-weight: 500; }
+    .summary-value.positive { color: var(--positive); }
+    .summary-value.negative { color: var(--danger); }
+    .summary-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .voice-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .voice-btn.listening { background: var(--danger); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    .honesty-banner {
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 12px 16px;
+      font-style: italic;
+    }
+    .simulated-badge {
+      display: inline-block;
+      background: var(--warning);
+      color: white;
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .notification {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--positive);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      display: none;
+      z-index: 100;
+    }
+    .notification.show { display: block; animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from { transform: translateX(-50%) translateY(-20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div class="notification" id="notification">Order confirmed via WhatsApp!</div>
+
+  <div class="header">
+    <div>
+      <div class="header-title">Ramesh Kirana Store</div>
+      <div class="header-sub">Indore | <span id="clock">6:00 AM</span> | Oct 20, 2024</div>
+    </div>
+    <span class="ai-badge">AI Active</span>
+  </div>
+
+  <div class="signals-row">
+    <div class="signal-chip">🌧️ Rain 80%</div>
+    <div class="signal-chip">🪔 Karwa Chauth Today</div>
+    <div class="signal-chip">🏏 IND vs PAK 7PM</div>
+  </div>
+
+  <div class="product-card green" onclick="toggleDetails(this)">
+    <div class="product-header">
+      <span class="product-name">Maggi Noodles</span>
+      <span class="stock-badge good">42 packs</span>
+    </div>
+    <div class="recommendation">Order 30 packs — Rain + Cricket demand spike</div>
+    <div class="financial-impact">Projected revenue: ₹360 (+80% vs baseline)</div>
+    <div class="confidence-bar"><div class="confidence-fill" style="width: 87%; background: var(--positive);"></div></div>
+    <div class="product-details">
+      <div class="detail-row"><span class="detail-label">AI Confidence</span><span>87%</span></div>
+      <div class="detail-row"><span class="detail-label">Suggested Qty</span><span>30 packs</span></div>
+      <div class="detail-row"><span class="detail-label">Unit Price</span><span>₹12</span></div>
+      <div class="detail-row"><span class="detail-label">Projected Impact</span><span>+₹288</span></div>
+    </div>
+  </div>
+
+  <div class="product-card red" onclick="toggleDetails(this)">
+    <div class="product-header">
+      <span class="product-name">Mehndi (Henna)</span>
+      <span class="stock-badge critical">3 boxes</span>
+    </div>
+    <div class="recommendation">URGENT: Order 25 boxes — Karwa Chauth +500% demand</div>
+    <div class="financial-impact">Projected revenue: ₹1,250 (+500% vs baseline)</div>
+    <div class="confidence-bar"><div class="confidence-fill" style="width: 94%; background: var(--danger);"></div></div>
+    <div class="product-details">
+      <div class="detail-row"><span class="detail-label">AI Confidence</span><span>94%</span></div>
+      <div class="detail-row"><span class="detail-label">Suggested Qty</span><span>25 boxes</span></div>
+      <div class="detail-row"><span class="detail-label">Unit Price</span><span>₹50</span></div>
+      <div class="detail-row"><span class="detail-label">Projected Impact</span><span>+₹1,050</span></div>
+    </div>
+  </div>
+
+  <div class="product-card yellow" onclick="toggleDetails(this)">
+    <div class="product-header">
+      <span class="product-name">Chips & Snacks</span>
+      <span class="stock-badge low">15 packs</span>
+    </div>
+    <div class="recommendation">Order 20 packs — Cricket match tonight</div>
+    <div class="financial-impact">Projected revenue: ₹680 (+70% vs baseline)</div>
+    <div class="confidence-bar"><div class="confidence-fill" style="width: 78%; background: var(--warning);"></div></div>
+    <div class="product-details">
+      <div class="detail-row"><span class="detail-label">AI Confidence</span><span>78%</span></div>
+      <div class="detail-row"><span class="detail-label">Suggested Qty</span><span>20 packs</span></div>
+      <div class="detail-row"><span class="detail-label">Unit Price</span><span>₹20</span></div>
+      <div class="detail-row"><span class="detail-label">Projected Impact</span><span>+₹280</span></div>
+    </div>
+  </div>
+
+  <div class="product-card green" onclick="toggleDetails(this)">
+    <div class="product-header">
+      <span class="product-name">Atta (Wheat Flour)</span>
+      <span class="stock-badge good">28 kg</span>
+    </div>
+    <div class="recommendation">Order 15 kg — Rainy day stock-up pattern</div>
+    <div class="financial-impact">Projected revenue: ₹675 (+45% vs baseline)</div>
+    <div class="confidence-bar"><div class="confidence-fill" style="width: 82%; background: var(--positive);"></div></div>
+    <div class="product-details">
+      <div class="detail-row"><span class="detail-label">AI Confidence</span><span>82%</span></div>
+      <div class="detail-row"><span class="detail-label">Suggested Qty</span><span>15 kg</span></div>
+      <div class="detail-row"><span class="detail-label">Unit Price</span><span>₹45/kg</span></div>
+      <div class="detail-row"><span class="detail-label">Projected Impact</span><span>+₹225</span></div>
+    </div>
+  </div>
+
+  <div class="product-card yellow" onclick="toggleDetails(this)">
+    <div class="product-header">
+      <span class="product-name">Cold Drinks</span>
+      <span class="stock-badge low">12 bottles</span>
+    </div>
+    <div class="recommendation">Order 18 bottles — Match day + cooler weather</div>
+    <div class="financial-impact">Projected revenue: ₹720 (+50% vs baseline)</div>
+    <div class="confidence-bar"><div class="confidence-fill" style="width: 71%; background: var(--warning);"></div></div>
+    <div class="product-details">
+      <div class="detail-row"><span class="detail-label">AI Confidence</span><span>71%</span></div>
+      <div class="detail-row"><span class="detail-label">Suggested Qty</span><span>18 bottles</span></div>
+      <div class="detail-row"><span class="detail-label">Unit Price</span><span>₹40</span></div>
+      <div class="detail-row"><span class="detail-label">Projected Impact</span><span>+₹240</span></div>
+    </div>
+  </div>
+
+  <button class="approve-btn" id="approveBtn" onclick="approveAll()">Approve All Orders</button>
+
+  <div class="summary-panel">
+    <div class="summary-title" style="font-size:14px;font-weight:500;margin-bottom:12px;">
+      Financial Summary <span class="simulated-badge">SIMULATED</span>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="summary-value positive">₹3,685</div>
+        <div class="summary-label">Projected Revenue</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value positive">+₹2,083</div>
+        <div class="summary-label">Projected Uplift</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value">87%</div>
+        <div class="summary-label">Avg Confidence</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value negative">1</div>
+        <div class="summary-label">Stockout Risk</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="honesty-banner">
+    Projected from prototype simulation with 5 stores over 30 days. Not production results.
+  </div>
+
+  <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎤</button>
+
+  <script>
+    function toggleDetails(card) {
+      const details = card.querySelector('.product-details');
+      details.classList.toggle('expanded');
+    }
+    function approveAll() {
+      const btn = document.getElementById('approveBtn');
+      btn.textContent = '✓ Orders Confirmed';
+      btn.disabled = true;
+      btn.style.background = '#059669';
+      showNotification('Orders confirmed! WhatsApp message sent to suppliers.');
+    }
+    function showNotification(msg) {
+      const notif = document.getElementById('notification');
+      notif.textContent = msg;
+      notif.classList.add('show');
+      setTimeout(() => notif.classList.remove('show'), 3000);
+    }
+    function toggleVoice() {
+      const btn = document.getElementById('voiceBtn');
+      if (btn.classList.contains('listening')) {
+        btn.classList.remove('listening');
+        btn.textContent = '🎤';
+        showNotification('Voice input recorded: "Bhaiya, 2 Maggi dena"');
+      } else {
+        btn.classList.add('listening');
+        btn.textContent = '🔴';
+        setTimeout(() => toggleVoice(), 2000);
+      }
+    }
+    // Update clock
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('clock').textContent = now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+    }, 60000);
+  </script>
+</body>
+</html>
